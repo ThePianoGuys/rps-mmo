@@ -1,7 +1,9 @@
 <script lang="ts">
-	import Counter from './Counter.svelte';
-	import welcome from '$lib/images/svelte-welcome.webp';
-	import welcomeFallback from '$lib/images/svelte-welcome.png';
+	import Counter from "./Counter.svelte";
+	import welcome from "$lib/images/svelte-welcome.webp";
+	import welcomeFallback from "$lib/images/svelte-welcome.png";
+
+	let { data } = $props();
 </script>
 
 <svelte:head>
@@ -24,6 +26,15 @@
 	<h2>
 		try editing <strong>src/routes/+page.svelte</strong>
 	</h2>
+
+	<div>Hello, world!</div>
+	<ul>
+		<li>test list element</li>
+
+		{#each data.instruments as instrument}
+			<li>{instrument.name}</li>
+		{/each}
+	</ul>
 
 	<Counter />
 </section>
