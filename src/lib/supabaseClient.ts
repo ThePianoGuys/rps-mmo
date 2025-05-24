@@ -10,24 +10,56 @@ export enum Move {
     SCISSORS = "scissors",
 }
 
+function getMoveColumn(playerId: Number, player_1_id: Number, player_2_id: Number) {
+    if (playerId === player_1_id) {
+        return {
+            yourMoveColumn: 'player_1_move',
+            opponentMoveColumn: 'player_2_move',
+        }
+    } else if (playerId === player_2_id) {
+        return {
+            yourMoveColumn: 'player_2_move',
+            opponentMoveColumn: 'player_1_move',
+        }
+    } else {
+        throw new Error('Invalid player ID');
+    }
+}
+
+function getOpponentId(playerId: Number, player_1_id: Number, player_2_id: Number) {
+    if (playerId === player_1_id) {
+        return player_2_id;
+    } else if (playerId === player_2_id) {
+        return player_1_id;
+    }
+}
+
+export async function getGameState(gameId: Number, playerId: Number) {
+    const gameData = await getGame(gameId);
+    const { player_1_id, player_2_id, current_round_idx } = gameData!;
+    const { yourMoveColumn, opponentMoveColumn } = getMoveColumn(playerId, player_1_id, player_2_id);
+
+    const roundsData = await getRounds(gameId);
+    const rounds = roundsData!;
+
+    return {
+        opponent_id: getOpponentId(playerId, player_1_id, player_2_id)!,
+        current_round_idx: current_round_idx,
+        rounds: roundsData?.map((round) => {
+            return {
+                your_move: round[yourMoveColumn as keyof typeof round],
+                opponent_move: round[opponentMoveColumn as keyof typeof round], 
+            }
+        })
+    }
+}
+
 export async function playMove(gameId: Number, playerId: Number, roundIdx: Number, move: Move | null) {
     // 1. Get game state and find out which player we are and what is the current round.
 
     const gameData = await getGame(gameId);
     const { player_1_id, player_2_id, current_round_idx } = gameData!;
-
-    let yourMoveColumn: string;
-    let opponentMoveColumn: string;
-
-    if (playerId === player_1_id) {
-        yourMoveColumn = 'player_1_move';
-        opponentMoveColumn = 'player_2_move';
-    } else if (playerId === player_2_id) {
-        yourMoveColumn = 'player_2_move';
-        opponentMoveColumn = 'player_1_move';
-    } else {
-        throw new Error('Invalid player ID');
-    }
+    const { yourMoveColumn, opponentMoveColumn } = getMoveColumn(playerId, player_1_id, player_2_id);
 
     let isNowOver = false;
 
@@ -88,11 +120,12 @@ export async function playMove(gameId: Number, playerId: Number, roundIdx: Numbe
 
     // 3. If the round is over, we need to push the game state to the opponent.
     if (isNowOver) {
-        pushNotificationForGame(gameId);
+        const opponentId = getOpponentId(playerId, player_1_id, player_2_id);
+        pushGameStateUpdateNotification(gameId, opponentId!);
     }
 }
 
-export async function getGame(gameId: Number) {
+async function getGame(gameId: Number) {
     const { data: gameData, error: gameError } = await supabase
         .from('Game')
         .select('player_1_id, player_2_id, current_round_idx')
@@ -112,7 +145,7 @@ export async function getGame(gameId: Number) {
     }
 }
 
-export async function getRound(gameId: Number, roundIdx: Number) {
+async function getRound(gameId: Number, roundIdx: Number) {
     const { data: roundData, error: roundError } = await supabase
         .from('Round')
         .select('player_1_move, player_2_move, is_over')
@@ -137,7 +170,26 @@ export async function getRound(gameId: Number, roundIdx: Number) {
     }
 }
 
-export async function createRound(gameId: Number, roundIdx: Number, moveColumn: string, move: Move | null) {
+async function getRounds(gameId: Number) {
+    const { data: roundData, error: roundError } = await supabase
+        .from('Round')
+        .select('round_idx, player_1_move, player_2_move, is_over')
+        .order('round_idx', { ascending: true })
+        .eq('game_id', gameId)
+
+    if (roundError?.code == 'PGRST116') {
+        return null;
+    }
+
+    else if (roundError) {
+        console.error(roundError);
+        return;
+    }
+
+    return roundData
+}
+
+async function createRound(gameId: Number, roundIdx: Number, moveColumn: string, move: Move | null) {
     const { data: createData, error: createError } = await supabase
         .from('Round')
         .insert({
@@ -152,17 +204,19 @@ export async function createRound(gameId: Number, roundIdx: Number, moveColumn: 
     }
 }
 
-export async function pushNotificationForGame(gameId: Number) {
-    const gameChannel = supabase.channel(`game_${gameId}`);
+export async function pushGameStateUpdateNotification(gameId: Number, playerId: Number) {
+    const gameChannel = supabase.channel(`game_${gameId}_${playerId}`);
     gameChannel.send({
         type: 'broadcast',
         event: 'updateGameState',
-        payload: {},
+        payload: {
+            gameState: await getGameState(gameId, playerId),
+        },
     });
 }
 
-export function subscribeToNotificationsForGame(gameId: Number) {
-    const gameChannel = supabase.channel(`game_${gameId}`);
+export function subscribeToGameStateUpdateNotifications(gameId: Number, playerId: Number) {
+    const gameChannel = supabase.channel(`game_${gameId}_${playerId}`);
     gameChannel.on(
         'broadcast',
         {event: 'updateGameState'},
@@ -177,5 +231,7 @@ export function subscribeToNotificationsForGame(gameId: Number) {
 
 // playMove(1, 1, 0, Move.ROCK);
 // pushNotificationForGame(1);
-console.log(await getGame(1));
-console.log(await getRound(1, 0));
+// console.log(await getGameState(1, 2));
+// console.log(await getRounds(1));
+// console.log(await getGame(1));
+// console.log(await getRound(1, 0));
