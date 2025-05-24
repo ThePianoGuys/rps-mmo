@@ -10,36 +10,11 @@ export enum Move {
     SCISSORS = "scissors",
 }
 
-export async function trySelecting(gameId: Number) {
-    const { data: gameData, error: gameError } = await supabase
-        .from('Game')
-        .select('player_1_id, player_2_id, current_round_idx')
-        .eq('id', gameId)
-        .limit(1)
-        .single();
-
-    if (gameError) {
-        console.error(gameError);
-        return;
-    }
-    console.log(gameData);
-}
-
 export async function playMove(gameId: Number, playerId: Number, roundIdx: Number, move: Move | null) {
     // 1. Get game state and find out which player we are and what is the current round.
-    const { data: gameData, error: gameError } = await supabase
-        .from('Game')
-        .select('player_1_id, player_2_id, current_round_idx')
-        .eq('id', gameId)
-        .limit(1)
-        .single();
 
-    if (gameError) {
-        console.error(gameError);
-        return;
-    }
-
-    const { player_1_id, player_2_id, current_round_idx } = gameData;
+    const gameData = await getGame(gameId);
+    const { player_1_id, player_2_id, current_round_idx } = gameData!;
 
     let yourMoveColumn: string;
     let opponentMoveColumn: string;
@@ -64,34 +39,23 @@ export async function playMove(gameId: Number, playerId: Number, roundIdx: Numbe
 
     // 2B. If the DB's current round is the one we are playing, fetch the current round from DB.
     else if (current_round_idx === roundIdx) {
-        const { data: roundData, error: roundError } = await supabase
-            .from('Round')
-            .select('player_1_move, player_2_move, is_over')
-            .eq('game_id', gameId)
-            .eq('round_idx', roundIdx)
-            .limit(1)
-            .single();
+        const roundData = await getRound(gameId, roundIdx);
 
-        if (roundError?.code == 'PGRST116') {
-            // The round does not exist yet, so we need to create it.
+        // 2B1. The round does not exist yet, so we need to create it.
+        if (roundData === null) {
             createRound(gameId, roundIdx, yourMoveColumn, move);
             return;
         }
 
-        else if (roundError) {
-            console.error(roundError);
-            return;
-        }
+        const { player_1_move, player_2_move, is_over } = roundData!;
 
-        const { player_1_move, player_2_move, is_over } = roundData;
-
-        // 2B1. If the round is over, we were too late.
+        // 2B2. The round is over, we were too late.
         if (is_over) {
             console.error('Round is over');
             return;
         }
 
-        // 2B2. Will the round be over after we play our move?
+        // 2B3. Will the round be over after we play our move?
         if (yourMoveColumn === 'player_1_move') {
             if (player_2_move) {
                 isNowOver = true;
@@ -102,7 +66,7 @@ export async function playMove(gameId: Number, playerId: Number, roundIdx: Numbe
             }
         }
 
-        // 2B3. We can play our move.
+        // 2B4. We can play our move.
         const { data: updateData, error: updateError } = await supabase
             .from('Round')
             .update({ [yourMoveColumn]: move, is_over: isNowOver })
@@ -128,6 +92,51 @@ export async function playMove(gameId: Number, playerId: Number, roundIdx: Numbe
     }
 }
 
+export async function getGame(gameId: Number) {
+    const { data: gameData, error: gameError } = await supabase
+        .from('Game')
+        .select('player_1_id, player_2_id, current_round_idx')
+        .eq('id', gameId)
+        .limit(1)
+        .single();
+
+    if (gameError) {
+        console.error(gameError);
+        return;
+    }
+
+    return {
+        player_1_id: gameData.player_1_id,
+        player_2_id: gameData.player_2_id,
+        current_round_idx: gameData.current_round_idx,
+    }
+}
+
+export async function getRound(gameId: Number, roundIdx: Number) {
+    const { data: roundData, error: roundError } = await supabase
+        .from('Round')
+        .select('player_1_move, player_2_move, is_over')
+        .eq('game_id', gameId)
+        .eq('round_idx', roundIdx)
+        .limit(1)
+        .single();
+
+    if (roundError?.code == 'PGRST116') {
+        return null;
+    }
+
+    else if (roundError) {
+        console.error(roundError);
+        return;
+    }
+
+    return {
+        player_1_move: roundData.player_1_move,
+        player_2_move: roundData.player_2_move,
+        is_over: roundData.is_over,
+    }
+}
+
 export async function createRound(gameId: Number, roundIdx: Number, moveColumn: string, move: Move | null) {
     const { data: createData, error: createError } = await supabase
         .from('Round')
@@ -144,19 +153,12 @@ export async function createRound(gameId: Number, roundIdx: Number, moveColumn: 
 }
 
 export async function pushNotificationForGame(gameId: Number) {
-    const { data, error } = await supabase
-            .rpc(
-                'realtime.send',
-                {
-                    topic: `game_${gameId}`,
-                    event: 'updateGameState',
-                    payload: {},
-                }
-            );
-
-    if (error) {
-        console.error(error);
-    }
+    const gameChannel = supabase.channel(`game_${gameId}`);
+    gameChannel.send({
+        type: 'broadcast',
+        event: 'updateGameState',
+        payload: {},
+    });
 }
 
 export function subscribeToNotificationsForGame(gameId: Number) {
@@ -173,5 +175,7 @@ export function subscribeToNotificationsForGame(gameId: Number) {
 
 // Testing
 
-// trySelecting(1);
 // playMove(1, 1, 0, Move.ROCK);
+// pushNotificationForGame(1);
+console.log(await getGame(1));
+console.log(await getRound(1, 0));
