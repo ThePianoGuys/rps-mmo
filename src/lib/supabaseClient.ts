@@ -48,7 +48,7 @@ export async function getGameState(gameId: Number, playerId: Number) {
         rounds: roundsData?.map((round) => {
             return {
                 your_move: round[yourMoveColumn as keyof typeof round],
-                opponent_move: round[opponentMoveColumn as keyof typeof round], 
+                opponent_move: round[opponentMoveColumn as keyof typeof round],
             }
         })
     }
@@ -215,13 +215,14 @@ export async function pushGameStateUpdateNotification(gameId: Number, playerId: 
     });
 }
 
-export function subscribeToGameStateUpdateNotifications(gameId: Number, playerId: Number) {
+export function subscribeToGameStateUpdateNotifications(gameId: Number, playerId: Number, callback: Function) {
     const gameChannel = supabase.channel(`game_${gameId}_${playerId}`);
     gameChannel.on(
         'broadcast',
-        {event: 'updateGameState'},
+        { event: 'updateGameState' },
         (payload) => {
             console.log(payload);
+            callback(payload);
         }
     ).subscribe();
 }
