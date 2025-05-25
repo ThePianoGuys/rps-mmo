@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types';
 
-export const supabase = createClient('https://okvnnflokjogyhbcmwld.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rdm5uZmxva2pvZ3loYmNtd2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxMTA0MDYsImV4cCI6MjA2MzY4NjQwNn0.K58IeWgqqt0SW_Gg-ozVVUrzY-EjOicKP9mZ0GY3M-o')
+export const supabase = createClient<Database>('https://okvnnflokjogyhbcmwld.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rdm5uZmxva2pvZ3loYmNtd2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxMTA0MDYsImV4cCI6MjA2MzY4NjQwNn0.K58IeWgqqt0SW_Gg-ozVVUrzY-EjOicKP9mZ0GY3M-o')
 
 
 export enum Move {
@@ -10,7 +10,7 @@ export enum Move {
     SCISSORS = "scissors",
 }
 
-function getMoveColumn(playerId: Number, player_1_id: Number, player_2_id: Number) {
+function getMoveColumn(playerId: number, player_1_id: number, player_2_id: number) {
     if (playerId === player_1_id) {
         return {
             yourMoveColumn: 'player_1_move',
@@ -26,7 +26,7 @@ function getMoveColumn(playerId: Number, player_1_id: Number, player_2_id: Numbe
     }
 }
 
-function getOpponentId(playerId: Number, player_1_id: Number, player_2_id: Number) {
+function getOpponentId(playerId: number, player_1_id: number, player_2_id: number) {
     if (playerId === player_1_id) {
         return player_2_id;
     } else if (playerId === player_2_id) {
@@ -34,7 +34,7 @@ function getOpponentId(playerId: Number, player_1_id: Number, player_2_id: Numbe
     }
 }
 
-export async function getGameState(gameId: Number, playerId: Number) {
+export async function getGameState(gameId: number, playerId: number) {
     const gameData = await getGame(gameId);
     const { player_1_id, player_2_id, current_round_idx } = gameData!;
     const { yourMoveColumn, opponentMoveColumn } = getMoveColumn(playerId, player_1_id, player_2_id);
@@ -54,7 +54,9 @@ export async function getGameState(gameId: Number, playerId: Number) {
     }
 }
 
-export async function playMove(gameId: Number, playerId: Number, roundIdx: Number, move: Move | null) {
+export type GameState = Awaited<ReturnType<typeof getGameState>>;
+
+export async function playMove(gameId: number, playerId: number, roundIdx: number, move: Move | null) {
     // 1. Get game state and find out which player we are and what is the current round.
 
     const gameData = await getGame(gameId);
@@ -125,7 +127,7 @@ export async function playMove(gameId: Number, playerId: Number, roundIdx: Numbe
     }
 }
 
-async function getGame(gameId: Number) {
+async function getGame(gameId: number) {
     const { data: gameData, error: gameError } = await supabase
         .from('Game')
         .select('player_1_id, player_2_id, current_round_idx')
@@ -145,7 +147,7 @@ async function getGame(gameId: Number) {
     }
 }
 
-async function getRound(gameId: Number, roundIdx: Number) {
+async function getRound(gameId: number, roundIdx: number) {
     const { data: roundData, error: roundError } = await supabase
         .from('Round')
         .select('player_1_move, player_2_move, is_over')
@@ -170,7 +172,7 @@ async function getRound(gameId: Number, roundIdx: Number) {
     }
 }
 
-async function getRounds(gameId: Number) {
+async function getRounds(gameId: number) {
     const { data: roundData, error: roundError } = await supabase
         .from('Round')
         .select('round_idx, player_1_move, player_2_move, is_over')
@@ -189,7 +191,7 @@ async function getRounds(gameId: Number) {
     return roundData
 }
 
-async function createRound(gameId: Number, roundIdx: Number, moveColumn: string, move: Move | null) {
+async function createRound(gameId: number, roundIdx: number, moveColumn: string, move: Move | null) {
     const { data: createData, error: createError } = await supabase
         .from('Round')
         .insert({
@@ -204,7 +206,7 @@ async function createRound(gameId: Number, roundIdx: Number, moveColumn: string,
     }
 }
 
-export async function pushGameStateUpdateNotification(gameId: Number, playerId: Number) {
+export async function pushGameStateUpdateNotification(gameId: number, playerId: number) {
     const gameChannel = supabase.channel(`game_${gameId}_${playerId}`);
     gameChannel.send({
         type: 'broadcast',
@@ -215,14 +217,13 @@ export async function pushGameStateUpdateNotification(gameId: Number, playerId: 
     });
 }
 
-export function subscribeToGameStateUpdateNotifications(gameId: Number, playerId: Number, callback: Function) {
+export function subscribeToGameStateUpdateNotifications(gameId: number, playerId: number, listenToGameState: (gameState: GameState) => any) {
     const gameChannel = supabase.channel(`game_${gameId}_${playerId}`);
     gameChannel.on(
         'broadcast',
         { event: 'updateGameState' },
         (payload) => {
-            console.log(payload);
-            callback(payload);
+            listenToGameState(payload.payload.gameState);
         }
     ).subscribe();
 }

@@ -6,13 +6,19 @@
 		pushGameStateUpdateNotification,
 		playMove,
 	} from "$lib/supabaseClient";
+	import type { GameState } from "$lib/supabaseClient";
 
-	function callback(payload) {
-		console.log(payload.payload);
-		console.log(payload.payload.gameState);
+	function listenToGameState(gameState: GameState) {
+		console.log("hello from svelte listenToGameState");
+		console.log(gameState);
 	}
 
-	subscribeToGameStateUpdateNotifications(1, 1, callback);
+	function testButton() {
+		console.log("testButton");
+		pushGameStateUpdateNotification(1, 1);
+	}
+
+	subscribeToGameStateUpdateNotifications(1, 1, listenToGameState);
 
 	//pushGameStateUpdateNotification(1, 1);
 	//let { data } = $props();
@@ -54,3 +60,4 @@
 <div>Your ID: ...</div>
 <div>Your Opponent ID: ...</div>
 <div>Game ID: ...</div>
+<button onclick={testButton}>test button</button>
