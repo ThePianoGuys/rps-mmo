@@ -1,7 +1,5 @@
 <script lang="ts">
-	import PaperSVG from "$lib/images/paper.svg.svelte";
-	import RockSVG from "$lib/images/rock.svg.svelte";
-	import ScissorsSVG from "$lib/images/scissors.svg.svelte";
+	import RPSSVG from "$lib/images/rps.svg.svelte";
 
 	import {
 		subscribeToGameStateUpdateNotifications,
@@ -9,7 +7,7 @@
 		playMove,
 	} from "$lib/supabaseClient";
 
-	async function callback(payload) {
+	function callback(payload) {
 		console.log(payload.payload);
 		console.log(payload.payload.gameState);
 	}
@@ -26,44 +24,33 @@
 	<meta name="description" content="Online Ranked Rock Paper Scissors Game" />
 </svelte:head>
 
-<!-- <section> -->
-<!-- 	<div>Hello, world!</div> -->
-<!-- 	<div>data.foo = {foo}</div> -->
-<!-- 	<button onclick={addFoo}>add Foo</button> -->
-<!-- 	<ul> -->
-<!-- 		<li>test list element</li> -->
-<!---->
-<!-- 		{#each data.words as word} -->
-<!-- 			<li>{word}</li> -->
-<!-- 		{/each} -->
-<!-- 	</ul> -->
-<!-- </section> -->
-<!---->
-<!-- <div class="d-grid"> -->
-<!-- 	<div class="row"> -->
-<!-- 		<div class="col-6 border">asdf</div> -->
-<!-- 		<div class="col-6 border">asdf</div> -->
-<!-- 	</div> -->
-<!-- </div> -->
-
 <div
 	class="d-flex justify-content-center align-items-center gap-2 border p-1 m-1"
 >
 	<button
 		type="button"
-		class="btn btn-outline-danger border border-5 rounded-circle p-3"
-		aria-label="play paper"
+		class="btn btn-outline-primary border border-5 rounded-circle p-3"
+		aria-label="play rock"
 	>
-		<PaperSVG /></button
+		<RPSSVG path="rock" /></button
 	>
 	<button
 		type="button"
-		class="btn btn-outline-primary border border-5 rounded-circle p-3"
-		aria-label="play rock"><RockSVG /></button
+		class="btn btn-outline-danger border border-5 rounded-circle p-3"
+		aria-label="play paper"
+	>
+		<RPSSVG path="paper" /></button
 	>
 	<button
 		type="button"
 		class="btn btn-outline-warning border border-5 rounded-circle p-3"
-		aria-label="play scissors"><ScissorsSVG /></button
+		aria-label="play scissors"
+	>
+		<RPSSVG path="scissors" /></button
 	>
 </div>
+
+<h3>Stats for nerds</h3>
+<div>Your ID: ...</div>
+<div>Your Opponent ID: ...</div>
+<div>Game ID: ...</div>
