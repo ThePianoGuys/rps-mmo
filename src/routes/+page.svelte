@@ -8,20 +8,46 @@
 	} from "$lib/supabaseClient";
 	import type { GameState } from "$lib/supabaseClient";
 
+	let logs: String[] = $state([]);
+	let { data } = $props();
+	let { games, user, supabase, session } = $derived(data);
+
 	function listenToGameState(gameState: GameState) {
 		console.log("hello from svelte listenToGameState");
 		console.log(gameState);
 	}
 
-	function testButton() {
-		console.log("testButton");
-		pushGameStateUpdateNotification(1, 1);
+	async function testButton() {
+		console.log("testButton, getting user");
+		// pushGameStateUpdateNotification(1, 1);
+
+		// const {
+		// 	data: { user },
+		// } = await supabase.auth.getUser();
+		// console.log(user);
+		//
+		// if (user === null) {
+		// 	console.log("user is null");
+		// 	const { data, error } = await supabase.auth.signInWithOAuth({
+		// 		provider: "google",
+		// 	});
+		// 	console.log(data);
+		// 	console.log(error);
+		// }
 	}
 
 	subscribeToGameStateUpdateNotifications(1, 1, listenToGameState);
 
-	//pushGameStateUpdateNotification(1, 1);
-	//let { data } = $props();
+	console.log("games are here!");
+	$effect(() => {
+		console.log("games, etc. are updated!");
+		console.log(games);
+		console.log(user);
+		console.log(supabase);
+		console.log(session);
+		// console.table({});
+	});
+	// console.log(games);
 	//let foo = $state("egg");
 </script>
 
@@ -57,7 +83,13 @@
 </div>
 
 <h3>Stats for nerds</h3>
-<div>Your ID: ...</div>
+<div>Your ID: {user?.id}</div>
 <div>Your Opponent ID: ...</div>
 <div>Game ID: ...</div>
 <button onclick={testButton}>test button</button>
+<div>Logs:</div>
+<ul>
+	{#each logs as log}
+		<li>{log}</li>
+	{/each}
+</ul>

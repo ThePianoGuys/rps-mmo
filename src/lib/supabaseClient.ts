@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
 
-export const supabase = createClient<Database>('https://okvnnflokjogyhbcmwld.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rdm5uZmxva2pvZ3loYmNtd2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxMTA0MDYsImV4cCI6MjA2MzY4NjQwNn0.K58IeWgqqt0SW_Gg-ozVVUrzY-EjOicKP9mZ0GY3M-o')
+export const supabase = createClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
 
 export enum Move {
