@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { path, size = 100 }: { path: keyof typeof PATHS; size?: number } =
+  let { path, size = 80 }: { path: keyof typeof PATHS; size?: number } =
     $props();
 
   const PAPER_PATH =

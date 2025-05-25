@@ -11,9 +11,12 @@
 	};
 </script>
 
-<header class="border">
-	<nav><a href="/">Home</a></nav>
+{#if user}
+	<div>Private page for user: {user?.email}</div>
+	<div>ID: {user.id}</div>
+	<div>Created at: {user.created_at}</div>
 	<button onclick={logout}>Logout</button>
-</header>
-
-<div>Private page for user: {user?.email}</div>
+{:else}
+	<div>You are not logged in.</div>
+	<div><a href="/auth">Please sign in</a></div>
+{/if}
