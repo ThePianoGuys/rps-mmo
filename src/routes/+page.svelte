@@ -1,43 +1,36 @@
 <script lang="ts">
 	import RPSSVG from "$lib/images/rps.svg.svelte";
-
-	import {
-		subscribeToGameStateUpdateNotifications,
-		pushGameStateUpdateNotification,
-		playMove,
-	} from "$lib/supabaseClient";
 	import type { GameState } from "$lib/supabaseClient";
 
 	let logs: String[] = $state([]);
 	let { data } = $props();
-	let { games, user, supabase, session } = $derived(data);
+	let { user } = $derived(data);
 
-	let currentGameState: GameState = $state({
+	let gameState: GameState = $state({
 		opponent_id: 0,
 		current_round_idx: 0,
-		rounds: undefined,
+		rounds: [],
 	});
 
-	function listenToGameState(gameState: GameState) {
+	function listenToGameState(newGameState: GameState) {
 		console.log("hello from svelte listenToGameState");
 		console.log(gameState);
-		currentGameState = gameState;
+		gameState = newGameState;
 	}
 
 	async function testButton() {
-		console.log("testButton, getting user");
+		console.log("testButton");
 	}
 
-	subscribeToGameStateUpdateNotifications(1, 1, listenToGameState);
-
-	console.log("games are here!");
-	$effect(() => {
-		console.log("games, etc. are updated!");
-		console.log(games);
-		console.log(user);
-		console.log(supabase);
-		console.log(session);
-	});
+	// subscribeToGameStateUpdateNotifications(1, 1, listenToGameState);
+	// console.log("games are here!");
+	// $effect(() => {
+	// 	console.log("games, etc. are updated!");
+	// 	console.log(games);
+	// 	console.log(user);
+	// 	console.log(supabase);
+	// 	console.log(session);
+	// });
 </script>
 
 <svelte:head>
@@ -60,6 +53,9 @@
 					<li>{log}</li>
 				{/each}
 			</ul>
+
+			<h4>gameState time</h4>
+			<div>{JSON.stringify(gameState)}</div>
 		</div>
 	</div>
 
@@ -68,7 +64,7 @@
 		class="d-flex flex-column justify-content-center align-items-center text-center gap-3 border border-3 flex-grow-1"
 	>
 		<div>
-			<h2>Round #{currentGameState.current_round_idx}</h2>
+			<h2>Round #{gameState?.current_round_idx}</h2>
 			<h6>~ Best of 3 ~</h6>
 		</div>
 

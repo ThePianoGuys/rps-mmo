@@ -1,15 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../database.types';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
+import type { Move } from './const';
 
 export const supabase = createClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
-
-export enum Move {
-    ROCK = "rock",
-    PAPER = "paper",
-    SCISSORS = "scissors",
-}
 
 function getMoveColumn(playerId: number, player_1_id: number, player_2_id: number) {
     if (playerId === player_1_id) {
@@ -32,26 +27,26 @@ function getOpponentId(playerId: number, player_1_id: number, player_2_id: numbe
         return player_2_id;
     } else if (playerId === player_2_id) {
         return player_1_id;
+    } else {
+        throw new Error('Invalid player ID');
     }
 }
 
 export async function getGameState(gameId: number, playerId: number) {
-    const gameData = await getGame(gameId);
-    const { player_1_id, player_2_id, current_round_idx } = gameData!;
+    const { player_1_id, player_2_id, current_round_idx } = await queryGetGame(gameId);
     const { yourMoveColumn, opponentMoveColumn } = getMoveColumn(playerId, player_1_id, player_2_id);
 
-    const roundsData = await getRounds(gameId);
-    const rounds = roundsData!;
+    const roundsData = await queryGetRounds(gameId);
 
     return {
-        opponent_id: getOpponentId(playerId, player_1_id, player_2_id)!,
+        opponent_id: getOpponentId(playerId, player_1_id, player_2_id),
         current_round_idx: current_round_idx,
         rounds: roundsData?.map((round) => {
             return {
                 your_move: round[yourMoveColumn as keyof typeof round],
                 opponent_move: round[opponentMoveColumn as keyof typeof round],
             }
-        })
+        }) || []
     }
 }
 
@@ -60,8 +55,7 @@ export type GameState = Awaited<ReturnType<typeof getGameState>>;
 export async function playMove(gameId: number, playerId: number, roundIdx: number, move: Move | null) {
     // 1. Get game state and find out which player we are and what is the current round.
 
-    const gameData = await getGame(gameId);
-    const { player_1_id, player_2_id, current_round_idx } = gameData!;
+    const { player_1_id, player_2_id, current_round_idx } = await queryGetGame(gameId);
     const { yourMoveColumn, opponentMoveColumn } = getMoveColumn(playerId, player_1_id, player_2_id);
 
     let isNowOver = false;
@@ -74,7 +68,7 @@ export async function playMove(gameId: number, playerId: number, roundIdx: numbe
 
     // 2B. If the DB's current round is the one we are playing, fetch the current round from DB.
     else if (current_round_idx === roundIdx) {
-        const roundData = await getRound(gameId, roundIdx);
+        const roundData = await queryGetRound(gameId, roundIdx);
 
         // 2B1. The round does not exist yet, so we need to create it.
         if (roundData === null) {
@@ -128,7 +122,7 @@ export async function playMove(gameId: number, playerId: number, roundIdx: numbe
     }
 }
 
-async function getGame(gameId: number) {
+async function queryGetGame(gameId: number) {
     const { data: gameData, error: gameError } = await supabase
         .from('Game')
         .select('player_1_id, player_2_id, current_round_idx')
@@ -138,7 +132,7 @@ async function getGame(gameId: number) {
 
     if (gameError) {
         console.error(gameError);
-        return;
+        throw gameError;
     }
 
     return {
@@ -148,7 +142,7 @@ async function getGame(gameId: number) {
     }
 }
 
-async function getRound(gameId: number, roundIdx: number) {
+async function queryGetRound(gameId: number, roundIdx: number) {
     const { data: roundData, error: roundError } = await supabase
         .from('Round')
         .select('player_1_move, player_2_move, is_over')
@@ -173,7 +167,7 @@ async function getRound(gameId: number, roundIdx: number) {
     }
 }
 
-async function getRounds(gameId: number) {
+async function queryGetRounds(gameId: number) {
     const { data: roundData, error: roundError } = await supabase
         .from('Round')
         .select('round_idx, player_1_move, player_2_move, is_over')
@@ -203,7 +197,7 @@ async function createRound(gameId: number, roundIdx: number, moveColumn: string,
 
     if (createError) {
         console.error(createError);
-        return;
+        throw createError;
     }
 }
 
@@ -235,6 +229,6 @@ export function subscribeToGameStateUpdateNotifications(gameId: number, playerId
 // playMove(1, 1, 0, Move.ROCK);
 // pushNotificationForGame(1);
 // console.log(await getGameState(1, 2));
-// console.log(await getRounds(1));
-// console.log(await getGame(1));
-// console.log(await getRound(1, 0));
+// console.log(await queryGetRounds(1));
+// console.log(await queryGetGame(1));
+// console.log(await queryGetRound(1, 0));
