@@ -45,7 +45,7 @@
 	<meta name="description" content="Online Ranked Rock Paper Scissors Game" />
 </svelte:head>
 
-<div class="h-100 d-flex">
+<div class="flex-grow-1 d-flex">
 	<div class="w-25">
 		<p>hey there~</p>
 		<div>
@@ -63,14 +63,16 @@
 		</div>
 	</div>
 
+	<!-- shown when selecting what move to play	 -->
 	<div
-		class="d-flex flex-column justify-content-center align-items-center gap-2 border border-3 flex-grow-1"
+		class="d-flex flex-column justify-content-center align-items-center text-center gap-3 border border-3 flex-grow-1"
 	>
-		<h2>Round #{currentGameState.current_round_idx}</h2>
+		<div>
+			<h2>Round #{currentGameState.current_round_idx}</h2>
+			<h6>~ Best of 3 ~</h6>
+		</div>
 
-		<div
-			class="d-flex justify-content-center align-items-center gap-1 border border-3 rounded-pill p-2"
-		>
+		<div class="d-flex justify-content-center align-items-center gap-1 p-2">
 			<button
 				type="button"
 				class="btn btn-outline-primary border border-5 rounded-circle p-3"
@@ -93,14 +95,61 @@
 				<RPSSVG path="scissors" /></button
 			>
 		</div>
+
+		<div class="container fw-bold mt-1" style="max-width: 400px;">
+			<div class="row">
+				<h4>Score</h4>
+			</div>
+			<div class="row">
+				<div class="col-1 badge bg-warning rounded-pill">2</div>
+				<div class="col-4 fst-italic">you</div>
+				<div class="col-2">vs</div>
+				<div class="col-4 fst-italic">opp</div>
+				<div class="col-1 badge bg-warning rounded-pill">2</div>
+			</div>
+		</div>
 	</div>
 
-	<div class="w-25 d-flex flex-column text-center p-3">
-		<div class="flex-grow-1">
-			<div class="h-50">
-				<div>
-					<h5>Game History</h5>
-					<ul class="list-group overflow-auto">
+	<div class="w-25 mh-100 text-center p-3">
+		<div class="h-50 pb-3">
+			<div>
+				<h5>Game History</h5>
+				<ul class="list-group overflow-auto" style="max-height: 300px;">
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+					<li class="list-group-item">P - S</li>
+				</ul>
+			</div>
+		</div>
+		<div class="d-grid h-50">
+			<div class="row">
+				<div class="col-6">
+					<h5>You</h5>
+					<ul class="list-group overflow-auto" style="max-height: 300px;">
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
 						<li class="list-group-item">P - S</li>
 						<li class="list-group-item">P - S</li>
 						<li class="list-group-item">P - S</li>
@@ -109,31 +158,27 @@
 						<li class="list-group-item">P - S</li>
 					</ul>
 				</div>
-			</div>
-			<div class="h-50 d-grid">
-				<div class="row">
-					<div class="col-6">
-						<h5>You</h5>
-						<ul class="list-group overflow-auto">
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-						</ul>
-					</div>
-					<div class="col-6">
-						<h5>Enemy</h5>
-						<ul class="list-group overflow-auto">
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-							<li class="list-group-item">P - S</li>
-						</ul>
-					</div>
+				<div class="col-6">
+					<h5>Enemy</h5>
+					<ul class="list-group overflow-auto" style="max-height: 300px;">
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+						<li class="list-group-item">P - S</li>
+					</ul>
 				</div>
 			</div>
 		</div>
